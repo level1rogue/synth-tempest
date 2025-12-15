@@ -5,21 +5,27 @@ const SPEED = 30.0
 const OFFSET_DISTANCE = 40.0  # Distance to offset player from the lane
 
 @export var radial_t: float = 1.0  # 0 = inner ring, 1 = outer ring (along tube depth)
+@export var perspective_amount: float = 0.3  # How much to skew the polygon (0 = none, 1 = extreme)
 
 var lane_index := 0
 var move_cooldown := 0.0
 var is_clockwise := true
 var level
+var polygon_2d: Polygon2D
+var original_polygon_points: PackedVector2Array = []
 
 func say_hi(name):
 	print("Hi, ", name)
 
 func _ready() -> void:
 	level = $"../Level"
+	polygon_2d = $Polygon2D
+	original_polygon_points = polygon_2d.polygon.duplicate()
 	# Determine polygon winding once using outer ring
 	is_clockwise = _compute_clockwise(level.outer_points)
 	update_rotation()
 	update_position()
+	#update_polygon_perspective()
 	print(position)
 
 func _compute_clockwise(points: Array) -> bool:
@@ -52,6 +58,36 @@ func update_rotation() -> void:
 	var inward = (inner_mid - outer_mid).normalized()
 	# Add PI/2 because sprite points up by default, not right
 	rotation = inward.angle() + PI / 2.0
+
+func update_polygon_perspective() -> void:
+	# Apply perspective skew to align the back parallel to the polygon edge
+	var transformed_points: PackedVector2Array = []
+	
+	# Get the direction of the polygon edge the ship is on
+	var count = level.get_lane_count()
+	var i_next = (lane_index + 1) % count
+	var inner_mid = level.inner_points[lane_index].lerp(level.inner_points[i_next], 0.5)
+	var outer_mid = level.outer_points[lane_index].lerp(level.outer_points[i_next], 0.5)
+	
+	# Edge direction - this is what the ship's base should align with
+	var edge_direction = (level.inner_points[i_next] - level.inner_points[lane_index]).normalized()
+	
+	# Calculate the rotation angle needed to align the local X axis with the edge direction
+	var local_right = Vector2(1, 0)  # Default right direction
+	var angle_to_edge = local_right.angle_to(edge_direction)
+	var shear_amount = tan(angle_to_edge) * perspective_amount
+	
+	for i in original_polygon_points.size():
+		var point = original_polygon_points[i]
+		
+		if i == 1:  # The nose point - keep it as is
+			transformed_points.append(point)
+		else:  # Base points (0 and 2) - apply shear to align with edge
+			# Shear to tilt the base parallel to the polygon edge
+			var sheared = Vector2(point.x, point.y + point.x * shear_amount)
+			transformed_points.append(sheared)
+	
+	polygon_2d.polygon = transformed_points
 	
 func _physics_process(delta: float) -> void:
 	move_cooldown -= delta
@@ -60,10 +96,12 @@ func _physics_process(delta: float) -> void:
 		lane_index = (lane_index + 1) % level.get_lane_count()
 		update_rotation()
 		update_position()
+		#update_polygon_perspective()
 		move_cooldown = 10.0 / SPEED
 		
 	if Input.is_action_pressed("move_left") and move_cooldown <= 0:
 		lane_index = (lane_index - 1 + level.get_lane_count()) % level.get_lane_count()
 		update_rotation()
 		update_position()
+		#update_polygon_perspective()
 		move_cooldown = 10.0 / SPEED

@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://wtqr1c2at1v1"]
+
+[ext_resource type="Script" uid="uid://b2l5pxlhfdwo" path="res://scripts/enemy.gd" id="1_7p1mj"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_8tegq"]
+lightmap_size_hint = Vector2i(14, 21)
+
+[node name="Enemy" type="Node2D"]
+script = ExtResource("1_7p1mj")
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="."]
+modulate = Color(1, 0.2627451, 0.050980393, 1)
+position = Vector2(0, 7.1525574e-07)
+scale = Vector2(13.999999, 14.000001)
+mesh = SubResource("BoxMesh_8tegq")

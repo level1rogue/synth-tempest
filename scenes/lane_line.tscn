@@ -1,12 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://b61t8d5j1onmv"]
+[gd_scene load_steps=3 format=3 uid="uid://b61t8d5j1onmv"]
 
 [sub_resource type="Curve" id="Curve_2q6dc"]
 _limits = [0.9965503, 8.0, 0.0, 1.0]
-_data = [Vector2(0, 0.9965503), 0.0, 7.0034494, 0, 1, Vector2(1, 8), 7.0034494, 0.0, 1, 0]
+bake_resolution = 1000
+_data = [Vector2(0, 0.9965503), 0.0, 1.0162402, 0, 1, Vector2(1, 2.0127907), 1.0162402, 0.0, 1, 0]
 point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_23m5k"]
+colors = PackedColorArray(0.3019608, 0.9019608, 1, 0.15686275, 0.3019608, 0.9019608, 1, 0.5882353)
 
 [node name="LaneLine" type="Line2D"]
 points = PackedVector2Array(288, 259, 604, 749)
-width = 3.0
+width = 2.0
 width_curve = SubResource("Curve_2q6dc")
 default_color = Color(0, 0.5764706, 0.5764706, 0.27058825)
+gradient = SubResource("Gradient_23m5k")

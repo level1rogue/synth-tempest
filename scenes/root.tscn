@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://c6eee0usmte2o"]
+[gd_scene load_steps=6 format=3 uid="uid://c6eee0usmte2o"]
 
 [ext_resource type="PackedScene" uid="uid://bdc34kseudnu" path="res://scenes/level.tscn" id="1_j5px3"]
 [ext_resource type="Script" uid="uid://dg2ksyolimhl7" path="res://scripts/root.gd" id="1_lrqlo"]
 [ext_resource type="PackedScene" uid="uid://dossaoovpr3yp" path="res://scenes/player.tscn" id="3_sqa0i"]
+[ext_resource type="PackedScene" uid="uid://wtqr1c2at1v1" path="res://scenes/enemy.tscn" id="4_sqa0i"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_vho56"]
 
@@ -18,3 +19,6 @@ metadata/_edit_lock_ = true
 [node name="Level" parent="." instance=ExtResource("1_j5px3")]
 
 [node name="Player" parent="." instance=ExtResource("3_sqa0i")]
+
+[node name="Enemy" parent="." instance=ExtResource("4_sqa0i")]
+position = Vector2(43, 28)

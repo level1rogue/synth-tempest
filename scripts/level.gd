@@ -1,7 +1,7 @@
 extends Node2D
 
-@export var shape_name: String = "pentagon"
-@export var segments_per_edge: int = 4        # lanes per original edge
+@export var shape_name: String = "triangle"
+@export var segments_per_edge: int = 3        # lanes per original edge
 @export var inner_ratio: float = 0.05         # inner ring size (of min dimension)
 @export var outer_ratio: float = 0.45         # outer ring size (of min dimension)
 
@@ -12,24 +12,41 @@ var lanes := []
 var inner_line: Line2D
 var outer_line: Line2D
 var lanes_container: Node2D
+var enemies_container: Node2D
+var enemy_timer: Timer
+var enemy_scene: PackedScene = preload("res://scenes/enemy.tscn")
 
 var screen_center := Vector2(0,0)
 var lane_line_scene: PackedScene = preload("res://scenes/lane_line.tscn")
+var rng := RandomNumberGenerator.new()
 
 func _ensure_lines():
 		if inner_line == null:
 				inner_line = Line2D.new()
-				inner_line.width = 2.0
-				inner_line.default_color = Color(0.0, 0.369, 0.42, 1.0)  # inner ring color
+				inner_line.width = 1.0
+				inner_line.default_color = GlobalData.c_purple  # inner ring color
+				inner_line.default_color.a = 0.5
 				add_child(inner_line)
 		if outer_line == null:
 				outer_line = Line2D.new()
-				outer_line.width = 2.0
-				outer_line.default_color = Color(0.3, 0.9, 1.0)  # outer ring color
+				outer_line.width = 3.0
+				outer_line.default_color = GlobalData.c_purple # outer ring color
 				add_child(outer_line)
 		if lanes_container == null:
 				lanes_container = Node2D.new()
 				add_child(lanes_container)
+		# Ensure enemies container and timer
+		if enemies_container == null:
+				enemies_container = Node2D.new()
+				enemies_container.name = "Enemies"
+				add_child(enemies_container)
+		if enemy_timer == null:
+				enemy_timer = Timer.new()
+				enemy_timer.wait_time = 2.0
+				enemy_timer.one_shot = false
+				enemy_timer.autostart = true
+				add_child(enemy_timer)
+				enemy_timer.timeout.connect(_on_enemy_timer_timeout)
 
 
 
@@ -43,10 +60,14 @@ func get_lane_position(index: int, t: float) -> Vector2:
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	screen_center = get_viewport_rect().size * 0.5
+	rng.randomize()
 	_ensure_lines()
 	build_tube()
 
 	get_viewport().size_changed.connect(recalc_on_resize) 	
+	# Start enemy spawning after initial tube build
+	if enemy_timer:
+		enemy_timer.start()
 
 func recalc_on_resize():
 		screen_center = get_viewport_rect().size * 0.5
@@ -94,10 +115,16 @@ func build_tube():
 			var spoke: Line2D = lane_line_scene.instantiate()
 			if spoke == null:
 				continue
+			spoke.gradient.colors = PackedColorArray([Color(GlobalData.c_purple, 0.3), Color(GlobalData.c_purple)])
 			spoke.clear_points()
 			spoke.add_point(inner_points[i])
 			spoke.add_point(outer_points[i])
+			spoke.width_curve.set_point_value(0, 1)
+			spoke.width_curve.set_point_value(1, 2)
 			lanes_container.add_child(spoke)
+
+	# Optionally clear enemies on rebuild (keep existing by default)
+	# If geometry changes, you may want to reposition enemies.
 
 # Returns a point along the radial lane i from inner (t=0) to outer (t=1)
 func get_radial_position(index: int, t: float) -> Vector2:
@@ -114,3 +141,20 @@ func get_radial_direction(index: int) -> Vector2:
 	if inner_points.is_empty():
 		return Vector2.UP
 	return (outer_points[i] - inner_points[i]).normalized()
+
+# Spawning ------------------------------------------------------------
+func _on_enemy_timer_timeout() -> void:
+	if inner_points.is_empty():
+		return
+	var lane_count = get_lane_count()
+	if lane_count <= 0:
+		return
+	var lane_index = rng.randi_range(0, lane_count - 1)
+	var enemy = enemy_scene.instantiate()
+	if enemy == null:
+		return
+	# Add to enemies container
+	enemies_container.add_child(enemy)
+	# Initialize enemy to move along chosen lane towards outer ring
+	if enemy.has_method("initialize"):
+		enemy.initialize(self, lane_index)
