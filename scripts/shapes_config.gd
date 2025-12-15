@@ -41,9 +41,9 @@ const SHAPES = {
 	],
 	"custom": [
 		Vector2(0, -0.67),
-		Vector2(0, -0.03),
+		Vector2(0.2, -0.03),
 		Vector2(1.0, 0.67),
-		Vector2(0, 0.67),
+		Vector2(0.4, 0.67),
 		Vector2(0, 0.33),
 		Vector2(-1.0, 0.67),
 	],

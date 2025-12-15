@@ -5,9 +5,11 @@ extends Node2D
 @export var far_scale: float = 0.35
 @export var near_scale: float = 1.0
 @export var perspective_ease: float = 1.6  # >1 accelerates near player
+@export var max_health: float = 20.0
 
 var level: Node
 var lane_index: int = 0
+var health: float = 20.0
 var _dir: Vector2 = Vector2.ZERO
 var _inner: Vector2 = Vector2.ZERO
 var _outer: Vector2 = Vector2.ZERO
@@ -16,6 +18,7 @@ var _length: float = 1.0
 func initialize(level_ref: Node, lane_idx: int) -> void:
 	level = level_ref
 	lane_index = lane_idx
+	health = max_health
 	
 	# Pull mid-edge geometry between consecutive lanes (like Player path)
 	var count: int = level.get_lane_count()
@@ -54,8 +57,14 @@ func _process(delta: float) -> void:
 	scale = Vector2.ONE * s
 	# Move with perspective speed
 	var current_speed = lerp(far_speed, near_speed, ease_t)
-	position += _dir * current_speed * delta
+	position += _dir * current_speed * delta * (randf() + 0.5 )
 	# Despawn after we pass beyond the outer ring
 	traveled = _dir.dot(position - _inner)
 	if traveled >= _length + 4.0:
+		queue_free()
+
+
+func take_damage(damage: float) -> void:
+	health -= damage
+	if health <= 0.0:
 		queue_free()

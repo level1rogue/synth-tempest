@@ -1,9 +1,10 @@
 extends Node2D
 
-@export var shape_name: String = "triangle"
-@export var segments_per_edge: int = 3        # lanes per original edge
+@export var shape_name: String = "octagon"
+@export var segments_per_edge: int = 2        # lanes per original edge
 @export var inner_ratio: float = 0.05         # inner ring size (of min dimension)
-@export var outer_ratio: float = 0.45         # outer ring size (of min dimension)
+@export var outer_ratio: float = 0.40         # outer ring size (of min dimension)
+@export var inner_y_offset_ratio: float = 0.22  # fraction of outer ring radius to offset inner ring on Y
 
 var inner_points: Array[Vector2] = []
 var outer_points: Array[Vector2] = []
@@ -12,6 +13,9 @@ var lanes := []
 var inner_line: Line2D
 var outer_line: Line2D
 var lanes_container: Node2D
+var active_lane_fill: Polygon2D
+var lane_spokes: Array = []
+var active_spoke_index: int = -1
 var enemies_container: Node2D
 var enemy_timer: Timer
 var enemy_scene: PackedScene = preload("res://scenes/enemy.tscn")
@@ -21,32 +25,36 @@ var lane_line_scene: PackedScene = preload("res://scenes/lane_line.tscn")
 var rng := RandomNumberGenerator.new()
 
 func _ensure_lines():
-		if inner_line == null:
-				inner_line = Line2D.new()
-				inner_line.width = 1.0
-				inner_line.default_color = GlobalData.c_purple  # inner ring color
-				inner_line.default_color.a = 0.5
-				add_child(inner_line)
-		if outer_line == null:
-				outer_line = Line2D.new()
-				outer_line.width = 3.0
-				outer_line.default_color = GlobalData.c_purple # outer ring color
-				add_child(outer_line)
-		if lanes_container == null:
-				lanes_container = Node2D.new()
-				add_child(lanes_container)
-		# Ensure enemies container and timer
-		if enemies_container == null:
-				enemies_container = Node2D.new()
-				enemies_container.name = "Enemies"
-				add_child(enemies_container)
-		if enemy_timer == null:
-				enemy_timer = Timer.new()
-				enemy_timer.wait_time = 2.0
-				enemy_timer.one_shot = false
-				enemy_timer.autostart = true
-				add_child(enemy_timer)
-				enemy_timer.timeout.connect(_on_enemy_timer_timeout)
+	if inner_line == null:
+		inner_line = Line2D.new()
+		inner_line.width = 1.0
+		inner_line.default_color = GlobalData.c_purple  # inner ring color
+		inner_line.default_color.a = 0.2
+		add_child(inner_line)
+	if outer_line == null:
+		outer_line = Line2D.new()
+		outer_line.width = 3.0
+		outer_line.default_color = GlobalData.c_purple # outer ring color
+		add_child(outer_line)
+	if lanes_container == null:
+		lanes_container = Node2D.new()
+		add_child(lanes_container)
+	if active_lane_fill == null:
+		active_lane_fill = Polygon2D.new()
+		active_lane_fill.color = Color(GlobalData.c_highlight, 0.01)
+		add_child(active_lane_fill)
+	# Ensure enemies container and timer
+	if enemies_container == null:
+		enemies_container = Node2D.new()
+		enemies_container.name = "Enemies"
+		add_child(enemies_container)
+	if enemy_timer == null:
+		enemy_timer = Timer.new()
+		enemy_timer.wait_time = 2.0
+		enemy_timer.one_shot = false
+		enemy_timer.autostart = true
+		add_child(enemy_timer)
+		enemy_timer.timeout.connect(_on_enemy_timer_timeout)
 
 
 
@@ -83,6 +91,9 @@ func build_tube():
 	var inner_scale = min_dim * inner_ratio
 	var outer_scale = min_dim * outer_ratio
 
+	# Offset inner ring on Y by a fraction of the outer radius for perspective illusion
+	var inner_y_offset = outer_scale * inner_y_offset_ratio
+
 	# 1) Get normalized, subdivided points for the chosen shape
 	var base_points = load("res://scripts/shapes_config.gd").calc_shape_segments(shape_name, segments_per_edge)
 
@@ -90,7 +101,7 @@ func build_tube():
 	inner_points.clear()
 	outer_points.clear()
 	for p in base_points:
-			inner_points.append(screen_center + Vector2(p.x * inner_scale, p.y * inner_scale))
+			inner_points.append(screen_center + Vector2(0, inner_y_offset) + Vector2(p.x * inner_scale, p.y * inner_scale))
 			outer_points.append(screen_center + Vector2(p.x * outer_scale, p.y * outer_scale))
 
 	# 3) Draw rings
@@ -108,6 +119,7 @@ func build_tube():
 
 	# 4) Draw radial lanes/spokes as individual lines to avoid zig-zag
 	if lanes_container:
+		lane_spokes.clear()
 		for child in lanes_container.get_children():
 			child.queue_free()
 		#lanes_container.clear()
@@ -115,13 +127,33 @@ func build_tube():
 			var spoke: Line2D = lane_line_scene.instantiate()
 			if spoke == null:
 				continue
-			spoke.gradient.colors = PackedColorArray([Color(GlobalData.c_purple, 0.3), Color(GlobalData.c_purple)])
+			# Assign a unique Gradient resource per spoke and enable it
+			var grad := Gradient.new()
+			grad.add_point(0.0, Color(GlobalData.c_purple, 0.2))
+			grad.add_point(1.0, GlobalData.c_purple)
+			spoke.gradient = grad
+			#spoke.use_gradient = true
 			spoke.clear_points()
 			spoke.add_point(inner_points[i])
 			spoke.add_point(outer_points[i])
 			spoke.width_curve.set_point_value(0, 1)
 			spoke.width_curve.set_point_value(1, 2)
 			lanes_container.add_child(spoke)
+			lane_spokes.append(spoke)
+
+		# Set default inactive modulate for all spokes
+		for s in lane_spokes:
+			var grad_default := Gradient.new()
+			grad_default.add_point(0.0, Color(GlobalData.c_purple, 0.2))
+			grad_default.add_point(1.0, GlobalData.c_purple)
+			s.gradient = grad_default
+			#s.use_gradient = true
+
+	# Recompute active lane fill if needed
+	if active_lane_fill:
+		# Default to first lane until explicitly set
+		_update_active_lane_fill(0)
+		_update_active_spoke(0)
 
 	# Optionally clear enemies on rebuild (keep existing by default)
 	# If geometry changes, you may want to reposition enemies.
@@ -141,6 +173,47 @@ func get_radial_direction(index: int) -> Vector2:
 	if inner_points.is_empty():
 		return Vector2.UP
 	return (outer_points[i] - inner_points[i]).normalized()
+
+# Active lane fill -----------------------------------------------------
+func set_active_lane(index: int) -> void:
+	if inner_points.is_empty():
+		return
+	_update_active_lane_fill(index)
+	_update_active_spoke(index)
+
+func _update_active_lane_fill(index: int) -> void:
+	var count := inner_points.size()
+	if count < 2:
+		return
+	var i := posmod(index, count)
+	var j := (i + 1) % count
+	# Quad representing the sector between lanes i and j
+	var p0: Vector2 = inner_points[i]
+	var p1: Vector2 = inner_points[j]
+	var p2: Vector2 = outer_points[j]
+	var p3: Vector2 = outer_points[i]
+	active_lane_fill.polygon = PackedVector2Array([p0, p1, p2, p3])
+
+func _update_active_spoke(index: int) -> void:
+	if lane_spokes.is_empty():
+		return
+	var count := lane_spokes.size()
+	var i := posmod(index, count)
+	var j := (i + 1) % count
+	for k in count:
+		var s: Line2D = lane_spokes[k]
+		if k == i or k == j:
+			var grad_active := Gradient.new()
+			grad_active.add_point(0.0, Color(GlobalData.c_highlight, 0.2))
+			grad_active.add_point(1.0, GlobalData.c_highlight)
+			s.gradient = grad_active
+			#s.use_gradient = true
+		else:
+			var grad_inactive := Gradient.new()
+			grad_inactive.add_point(0.0, Color(GlobalData.c_purple, 0.2))
+			grad_inactive.add_point(1.0, GlobalData.c_purple)
+			s.gradient = grad_inactive
+			#s.use_gradient = true
 
 # Spawning ------------------------------------------------------------
 func _on_enemy_timer_timeout() -> void:

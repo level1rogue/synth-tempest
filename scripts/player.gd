@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 
-const SPEED = 30.0
+const SPEED = 100.0
 const OFFSET_DISTANCE = 40.0  # Distance to offset player from the lane
 
 @export var radial_t: float = 1.0  # 0 = inner ring, 1 = outer ring (along tube depth)
@@ -13,6 +13,8 @@ var is_clockwise := true
 var level
 var polygon_2d: Polygon2D
 var original_polygon_points: PackedVector2Array = []
+var shoot_timer: Timer
+var projectile_scene: PackedScene = preload("res://scenes/projectile.tscn")
 
 func say_hi(name):
 	print("Hi, ", name)
@@ -27,6 +29,14 @@ func _ready() -> void:
 	update_position()
 	#update_polygon_perspective()
 	print(position)
+
+	# Auto-fire timer (1s)
+	shoot_timer = Timer.new()
+	shoot_timer.wait_time = 0.3
+	shoot_timer.one_shot = false
+	shoot_timer.autostart = true
+	add_child(shoot_timer)
+	shoot_timer.timeout.connect(_on_shoot_timer_timeout)
 
 func _compute_clockwise(points: Array) -> bool:
 	var area := 0.0
@@ -97,6 +107,8 @@ func _physics_process(delta: float) -> void:
 		update_rotation()
 		update_position()
 		#update_polygon_perspective()
+		if level.has_method("set_active_lane"):
+			level.set_active_lane(lane_index)
 		move_cooldown = 10.0 / SPEED
 		
 	if Input.is_action_pressed("move_left") and move_cooldown <= 0:
@@ -104,4 +116,26 @@ func _physics_process(delta: float) -> void:
 		update_rotation()
 		update_position()
 		#update_polygon_perspective()
+		if level.has_method("set_active_lane"):
+			level.set_active_lane(lane_index)
 		move_cooldown = 10.0 / SPEED
+
+func _on_shoot_timer_timeout() -> void:
+	if level == null:
+		return
+	var count = level.get_lane_count()
+	if count == 0:
+		return
+	# Compute inward direction along the current mid-edge (towards center)
+	var i_next = (lane_index + 1) % count
+	var inner_mid = level.inner_points[lane_index].lerp(level.inner_points[i_next], 0.5)
+	var outer_mid = level.outer_points[lane_index].lerp(level.outer_points[i_next], 0.5)
+	var inward = (inner_mid - outer_mid).normalized()
+	# Spawn projectile at player position, moving inward
+	var proj = projectile_scene.instantiate()
+	if proj == null:
+		return
+	# Add to same parent as player or level for organization
+	level.add_child(proj)
+	if proj.has_method("initialize"):
+		proj.initialize(position, inward, inner_mid)

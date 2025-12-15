@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://c6eee0usmte2o"]
+[gd_scene load_steps=7 format=3 uid="uid://c6eee0usmte2o"]
 
 [ext_resource type="PackedScene" uid="uid://bdc34kseudnu" path="res://scenes/level.tscn" id="1_j5px3"]
 [ext_resource type="Script" uid="uid://dg2ksyolimhl7" path="res://scripts/root.gd" id="1_lrqlo"]
@@ -6,6 +6,13 @@
 [ext_resource type="PackedScene" uid="uid://wtqr1c2at1v1" path="res://scenes/enemy.tscn" id="4_sqa0i"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_vho56"]
+
+[sub_resource type="Environment" id="Environment_sqa0i"]
+background_mode = 3
+glow_enabled = true
+glow_bloom = 0.32
+glow_blend_mode = 1
+glow_hdr_threshold = 0.29
 
 [node name="Root" type="Node2D"]
 script = ExtResource("1_lrqlo")
@@ -22,3 +29,6 @@ metadata/_edit_lock_ = true
 
 [node name="Enemy" parent="." instance=ExtResource("4_sqa0i")]
 position = Vector2(43, 28)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_sqa0i")

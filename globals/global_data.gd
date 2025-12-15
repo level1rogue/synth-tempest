@@ -7,3 +7,5 @@ class_name gdata
 
 var c_purple := Color("8200FF")
 var c_green := Color("15e993ff")
+
+var c_highlight := Color(1.0, 0.878, 0.063, 1.0)
