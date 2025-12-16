@@ -1,15 +1,14 @@
-[gd_resource type="Resource" script_class="LevelConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LevelConfig" load_steps=2 format=3 uid="uid://c1bery5ed3ooj"]
 
-[ext_resource type="Script" path="res://scripts/level_config.gd" id="1"]
+[ext_resource type="Script" uid="uid://d0kdpkdw0iqof" path="res://scripts/level_config.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-shape_name = "octagon"
-segments_per_edge = 4
+duration = 50
+segments_per_edge = 3
 inner_ratio = 0.03
 outer_ratio = 0.48
 inner_y_offset_ratio = 0.25
-perspective_shift_ratio = 0.08
 outer_shift_ratio = 0.15
 enemy_spawn_interval = 1.2
 ring_color = Color(0.988235, 0.239216, 0.403922, 1)

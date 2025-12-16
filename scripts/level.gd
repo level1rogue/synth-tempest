@@ -7,9 +7,12 @@ const DEFAULT_CONFIG := preload("res://resources/level_1_triangle.tres")
 @onready var starfield_far := $StarfieldFar as GPUParticles2D
 @onready var points_label := $PointsLabel as Label
 @onready var health_label := $HealthLabel as Label
+@onready var duration_label := $DurationLabel as Label
+ 
+var time_left: int = 0
+var duration_timer: Timer
 
-var player_points := 0
-var player_health := 100
+signal level_won
 
 var inner_points: Array[Vector2] = []
 var outer_points: Array[Vector2] = []
@@ -100,13 +103,21 @@ func _ready() -> void:
 	_ensure_lines()
 	build_tube()
 
+	# Setup and start duration countdown
+	if duration_timer == null:
+		duration_timer = Timer.new()
+		duration_timer.wait_time = 1.0
+		duration_timer.one_shot = false
+		add_child(duration_timer)
+		duration_timer.timeout.connect(_on_duration_tick)
+
 	get_viewport().size_changed.connect(recalc_on_resize) 	
 	# Start enemy spawning after initial tube build
 	if enemy_timer:
 		enemy_timer.start()
 		
-	points_label.text = str(player_points).pad_zeros(5)
-	health_label.text = str(player_health).pad_zeros(3)
+	# Initialize only duration from config; Root manages points/health HUD
+	_time_init_and_start()
 
 func recalc_on_resize():
 	screen_center_base = get_viewport_rect().size * 0.5
@@ -332,10 +343,62 @@ func _on_enemy_timer_timeout() -> void:
 	if enemy.has_method("initialize"):
 		enemy.initialize(self, lane_index)
 
+func _time_init_and_start() -> void:
+	if not level_config:
+		return
+	time_left = int(level_config.duration)
+	duration_label.text = str(time_left)
+	if duration_timer:
+		duration_timer.start()
+	# Ensure spawner runs during level time
+	if enemy_timer and not enemy_timer.is_stopped():
+		pass
+	elif enemy_timer:
+		enemy_timer.start()
+	# Re-enable player input/shooting if available
+	_set_player_enabled(true)
+
+func _on_duration_tick() -> void:
+	time_left = max(0, time_left - 1)
+	duration_label.text = str(time_left)
+	if time_left <= 0:
+		_duration_reached_zero()
+
+func _duration_reached_zero() -> void:
+	# Stop timers
+	if duration_timer: duration_timer.stop()
+	if enemy_timer: enemy_timer.stop()
+	# Clear enemies and projectiles
+	if enemies_container:
+		for e in enemies_container.get_children():
+			e.queue_free()
+	if projectiles_container:
+		for p in projectiles_container.get_children():
+			p.queue_free()
+	# Freeze player controls and shooting
+	_set_player_enabled(false)
+	# Emit event for UI / progression
+	emit_signal("level_won")
+
+func _set_player_enabled(enabled: bool) -> void:
+	var parent := get_parent()
+	if parent and parent.has_node("Player"):
+		var player = parent.get_node("Player")
+		if player and player.has_method("set_enabled"):
+			player.set_enabled(enabled)
+
+func apply_and_start(new_config: LevelConfig) -> void:
+	# Called by a level manager (root) to switch to a new config and start its timer
+	level_config = new_config
+	build_tube()
+	_time_init_and_start()
+
 func add_to_points(amount: int):
-	player_points += amount
-	points_label.text = str(player_points).pad_zeros(5)
+	var parent := get_parent()
+	if parent and parent.has_method("add_to_points"):
+		parent.add_to_points(amount)
 
 func player_take_damage(amount: int):
-	player_health -= amount
-	health_label.text = str(player_health).pad_zeros(3)
+	var parent := get_parent()
+	if parent and parent.has_method("player_take_damage"):
+		parent.player_take_damage(amount)

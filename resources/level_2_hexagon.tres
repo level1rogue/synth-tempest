@@ -1,11 +1,10 @@
-[gd_resource type="Resource" script_class="LevelConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LevelConfig" load_steps=2 format=3 uid="uid://b62dunknoewws"]
 
-[ext_resource type="Script" path="res://scripts/level_config.gd" id="1"]
+[ext_resource type="Script" uid="uid://d0kdpkdw0iqof" path="res://scripts/level_config.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 shape_name = "hexagon"
-segments_per_edge = 2
 inner_ratio = 0.04
 outer_ratio = 0.45
 inner_y_offset_ratio = 0.18
@@ -17,4 +16,3 @@ highlight_color = Color(0.560784, 0.921569, 1, 1)
 ring_alpha = 0.25
 enemy_speed_multiplier = 1.2
 enemy_health_multiplier = 1.1
-projectile_damage_multiplier = 1.0

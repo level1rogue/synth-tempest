@@ -4,6 +4,9 @@ class_name LevelConfig
 ## Configuration resource for level parameters
 ## Create different .tres files to define multiple levels
 
+# Time
+@export var duration: int = 30
+
 # Geometry
 @export var shape_name: String = "octagon"
 @export var segments_per_edge: int = 2

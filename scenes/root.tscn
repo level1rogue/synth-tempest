@@ -1,10 +1,9 @@
-[gd_scene load_steps=13 format=3 uid="uid://c6eee0usmte2o"]
+[gd_scene load_steps=12 format=3 uid="uid://c6eee0usmte2o"]
 
 [ext_resource type="PackedScene" uid="uid://bdc34kseudnu" path="res://scenes/level.tscn" id="1_j5px3"]
 [ext_resource type="Script" uid="uid://dg2ksyolimhl7" path="res://scripts/root.gd" id="1_lrqlo"]
 [ext_resource type="Shader" uid="uid://d2ahyk81s6fun" path="res://shaders/starfield.gdshader" id="2_jh1ax"]
 [ext_resource type="PackedScene" uid="uid://dossaoovpr3yp" path="res://scenes/player.tscn" id="3_sqa0i"]
-[ext_resource type="Resource" path="res://resources/level_2_hexagon.tres" id="4_j287u"]
 [ext_resource type="PackedScene" uid="uid://wtqr1c2at1v1" path="res://scenes/enemy.tscn" id="4_sqa0i"]
 [ext_resource type="Shader" uid="uid://bpd67tttdyqsp" path="res://shaders/vhs_effect.gdshader" id="6_kycxp"]
 
@@ -27,6 +26,9 @@ shader_parameter/pixelate_count = 1000.0
 
 [sub_resource type="Environment" id="Environment_sqa0i"]
 background_mode = 3
+glow_enabled = true
+glow_intensity = 1.36
+glow_strength = 0.98
 glow_bloom = 0.32
 glow_blend_mode = 1
 glow_hdr_threshold = 0.29
@@ -74,12 +76,11 @@ scale = Vector2(1158.5, 654.49994)
 mesh = SubResource("QuadMesh_vho56")
 
 [node name="Level" parent="." instance=ExtResource("1_j5px3")]
-level_config = ExtResource("4_j287u")
 
 [node name="Player" parent="." instance=ExtResource("3_sqa0i")]
 
 [node name="Enemy" parent="." instance=ExtResource("4_sqa0i")]
-position = Vector2(43, 28)
+position = Vector2(-582, -351)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_sqa0i")

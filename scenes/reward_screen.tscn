@@ -1,0 +1,169 @@
+[gd_scene load_steps=9 format=3 uid="uid://dr1rf5aavhp20"]
+
+[ext_resource type="FontFile" uid="uid://bctuk6rg76r4g" path="res://fonts/Drexs-51Pp8.otf" id="1_jy5r4"]
+[ext_resource type="Script" uid="uid://bj2yo4dmqucac" path="res://scripts/reward_screen.gd" id="2_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_border"]
+bg_color = Color(0.019607844, 0.019607844, 0.078431375, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0, 0.8, 1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.061353654, 0.84495777, 0.86998475, 0.6)
+shadow_size = 8
+
+[sub_resource type="LabelSettings" id="LabelSettings_tdh72"]
+font = ExtResource("1_jy5r4")
+font_size = 72
+font_color = Color(0, 0.9, 1, 1)
+outline_size = 4
+outline_color = Color(0.4, 0, 0.8, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_jy5r4"]
+font = ExtResource("1_jy5r4")
+font_size = 32
+font_color = Color(0.9, 0.95, 1, 1)
+outline_size = 2
+outline_color = Color(0, 0.4, 0.8, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
+bg_color = Color(0.05, 0.05, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.7, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
+bg_color = Color(0, 0.5, 0.8, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 1, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
+bg_color = Color(0.1, 0.15, 0.35, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.4, 0, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0.8, 1, 0.5)
+shadow_size = 4
+
+[node name="RewardScreen" type="Node2D"]
+scale = Vector2(0.82, 0.82)
+script = ExtResource("2_script")
+
+[node name="Background" type="ColorRect" parent="."]
+visible = false
+offset_left = -798.7805
+offset_top = -523.1708
+offset_right = 795.2195
+offset_bottom = 508.82922
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.02, 0.02, 0.08, 0.95)
+
+[node name="BorderPanel" type="Panel" parent="."]
+offset_left = -790.7805
+offset_top = -515.1708
+offset_right = 787.2195
+offset_bottom = 500.82922
+theme_override_styles/panel = SubResource("StyleBoxFlat_border")
+
+[node name="RewardLabel" type="Label" parent="."]
+offset_left = -402.78052
+offset_top = -402.17075
+offset_right = 405.21948
+offset_bottom = -329.17075
+scale = Vector2(1, 1.0532664)
+size_flags_horizontal = 4
+text = "Choose your reward"
+label_settings = SubResource("LabelSettings_tdh72")
+
+[node name="OptionOne" type="Node2D" parent="."]
+position = Vector2(-481.78052, -232.17075)
+
+[node name="OptionSelect" type="ColorRect" parent="OptionOne"]
+offset_left = -27.0
+offset_top = -25.0
+offset_right = 390.0
+offset_bottom = 468.0
+color = Color(0, 0.8, 1, 0.3)
+
+[node name="Image" type="ColorRect" parent="OptionOne"]
+offset_left = -3.0
+offset_top = -1.0
+offset_right = 363.0
+offset_bottom = 368.0
+color = Color(0.1, 0.15, 0.3, 1)
+
+[node name="Label" type="Label" parent="OptionOne"]
+offset_left = 78.0
+offset_top = 385.0
+offset_right = 289.0
+offset_bottom = 418.0
+text = "Shot Speed +"
+label_settings = SubResource("LabelSettings_jy5r4")
+
+[node name="OptionTwo" type="Node2D" parent="."]
+position = Vector2(118.21948, -232.17075)
+
+[node name="OptionSelect" type="ColorRect" parent="OptionTwo"]
+visible = false
+offset_left = -28.0
+offset_top = -25.0
+offset_right = 389.0
+offset_bottom = 468.0
+color = Color(0, 0.8, 1, 0.3)
+
+[node name="Image" type="ColorRect" parent="OptionTwo"]
+offset_left = -3.0
+offset_top = -1.0
+offset_right = 363.0
+offset_bottom = 368.0
+color = Color(0.15, 0.1, 0.35, 1)
+
+[node name="Label" type="Label" parent="OptionTwo"]
+offset_left = 78.0
+offset_top = 385.0
+offset_right = 289.0
+offset_bottom = 418.0
+text = "Shot Power +"
+label_settings = SubResource("LabelSettings_jy5r4")
+
+[node name="Button" type="Button" parent="."]
+offset_left = -113.78052
+offset_top = 322.82922
+offset_right = 105.21948
+offset_bottom = 415.82922
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.5, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 0.4, 1, 1)
+theme_override_fonts/font = ExtResource("1_jy5r4")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
+text = "Confirm"

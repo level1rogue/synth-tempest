@@ -15,6 +15,7 @@ var polygon_2d: Polygon2D
 var original_polygon_points: PackedVector2Array = []
 var shoot_timer: Timer
 var projectile_scene: PackedScene = preload("res://scenes/projectile.tscn")
+var input_enabled := true
 
 func say_hi(name):
 	print("Hi, ", name)
@@ -114,6 +115,8 @@ func update_polygon_perspective() -> void:
 	polygon_2d.polygon = transformed_points
 	
 func _physics_process(delta: float) -> void:
+	if not input_enabled:
+		return
 	move_cooldown -= delta
 	
 	if Input.is_action_pressed("move_right") and move_cooldown <= 0:
@@ -156,3 +159,14 @@ func _on_shoot_timer_timeout() -> void:
 		level.add_child(proj)
 	if proj.has_method("initialize"):
 		proj.initialize(level, lane_index, position, inner_mid)
+
+func set_enabled(enable: bool) -> void:
+	input_enabled = enable
+	if shoot_timer:
+		if enable:
+			if not shoot_timer.is_stopped():
+				pass
+			else:
+				shoot_timer.start()
+		else:
+			shoot_timer.stop()

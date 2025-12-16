@@ -1,7 +1,7 @@
-[gd_scene load_steps=18 format=3 uid="uid://bdc34kseudnu"]
+[gd_scene load_steps=19 format=3 uid="uid://bdc34kseudnu"]
 
 [ext_resource type="Script" uid="uid://cgmry5peih38r" path="res://scripts/level.gd" id="1_2q6dc"]
-[ext_resource type="Resource" path="res://resources/level_1_triangle.tres" id="2_cfg"]
+[ext_resource type="Resource" uid="uid://ip7p5co42a3i" path="res://resources/level_1_triangle.tres" id="2_cfg"]
 [ext_resource type="FontFile" uid="uid://bctuk6rg76r4g" path="res://fonts/Drexs-51Pp8.otf" id="3_w8frs"]
 
 [sub_resource type="Gradient" id="Gradient_2q6dc"]
@@ -78,6 +78,11 @@ font = ExtResource("3_w8frs")
 font_size = 200
 font_color = Color(1, 0.9647059, 0.6, 1)
 
+[sub_resource type="LabelSettings" id="LabelSettings_ppgk2"]
+font = ExtResource("3_w8frs")
+font_size = 200
+font_color = Color(0.3, 0.9, 1, 1)
+
 [node name="Level" type="Node2D"]
 script = ExtResource("1_2q6dc")
 level_config = ExtResource("2_cfg")
@@ -121,3 +126,12 @@ offset_right = 1022.0
 offset_bottom = 233.0
 text = "00000"
 label_settings = SubResource("LabelSettings_mx8sn")
+
+[node name="DurationLabel" type="Label" parent="."]
+offset_left = 1263.0
+offset_top = 32.0
+offset_right = 1903.0
+offset_bottom = 232.0
+text = "20"
+label_settings = SubResource("LabelSettings_ppgk2")
+horizontal_alignment = 2
