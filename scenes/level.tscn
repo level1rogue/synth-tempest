@@ -1,6 +1,94 @@
-[gd_scene load_steps=2 format=3 uid="uid://bdc34kseudnu"]
+[gd_scene load_steps=14 format=3 uid="uid://bdc34kseudnu"]
 
 [ext_resource type="Script" uid="uid://cgmry5peih38r" path="res://scripts/level.gd" id="1_2q6dc"]
 
+[sub_resource type="Gradient" id="Gradient_2q6dc"]
+offsets = PackedFloat32Array(0, 0.06178862, 1)
+colors = PackedColorArray(0.2627451, 0.47058824, 1, 1, 1, 1, 1, 0.42439026, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_w7c3h"]
+gradient = SubResource("Gradient_2q6dc")
+width = 2
+fill_to = Vector2(0, 1)
+
+[sub_resource type="Curve" id="Curve_2q6dc"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 0.37975502), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_w7c3h"]
+curve = SubResource("Curve_2q6dc")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_2q6dc"]
+lifetime_randomness = 0.15
+particle_flag_align_y = true
+emission_shape = 1
+emission_sphere_radius = 39.51
+spread = 180.0
+initial_velocity_min = 900.0
+initial_velocity_max = 1400.0
+gravity = Vector3(0, 0, 0)
+scale_curve = SubResource("CurveTexture_w7c3h")
+
+[sub_resource type="Gradient" id="Gradient_w7c3h"]
+offsets = PackedFloat32Array(0, 0.943074, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.28235295, 0.21568628, 0.7647059, 0.6784314, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_w8frs"]
+gradient = SubResource("Gradient_w7c3h")
+
+[sub_resource type="Curve" id="Curve_w8frs"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 0.21631211), -0.86140907, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_far"]
+width = 1080
+curve = SubResource("Curve_w8frs")
+
+[sub_resource type="Curve" id="Curve_w7c3h"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 0.86170214), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_w8frs"]
+curve = SubResource("Curve_w7c3h")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_far"]
+lifetime_randomness = 0.38
+particle_flag_align_y = true
+spread = 180.0
+initial_velocity_min = 418.47
+initial_velocity_max = 618.47
+gravity = Vector3(0, 0, 0)
+radial_accel_min = 900.0
+radial_accel_max = 1400.0
+scale_curve = SubResource("CurveTexture_far")
+scale_over_velocity_min = 544.12
+scale_over_velocity_max = 714.70996
+scale_over_velocity_curve = SubResource("CurveTexture_w8frs")
+color_ramp = SubResource("GradientTexture1D_w8frs")
+
 [node name="Level" type="Node2D"]
 script = ExtResource("1_2q6dc")
+
+[node name="Starfield" type="GPUParticles2D" parent="."]
+visible = false
+position = Vector2(929, 500)
+amount = 180
+texture = SubResource("GradientTexture2D_w7c3h")
+preprocess = 0.4
+randomness = 0.5
+trail_enabled = true
+trail_lifetime = 0.12
+process_material = SubResource("ParticleProcessMaterial_2q6dc")
+
+[node name="StarfieldFar" type="GPUParticles2D" parent="."]
+position = Vector2(929, 500)
+scale = Vector2(33.519997, 31.400002)
+amount = 500
+amount_ratio = 0.5647
+texture = SubResource("GradientTexture2D_w7c3h")
+lifetime = 0.53
+preprocess = 0.6
+randomness = 0.6
+trail_enabled = true
+trail_lifetime = 9.46
+process_material = SubResource("ParticleProcessMaterial_far")

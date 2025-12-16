@@ -8,22 +8,24 @@ extends Node2D
 @export var extra_travel_margin: float = 4.0
 @export var damage: float = 10.0
 
+var level: Node = null
+var lane_index: int = 0
 var _dir: Vector2 = Vector2.ZERO
 var _start: Vector2 = Vector2.ZERO
 var _target: Vector2 = Vector2.ZERO
 var _length: float = 0.0
 var _hit_enemies: Array = []  # Track enemies we've already hit to avoid double-hits
 
-func initialize(start_pos: Vector2, direction: Vector2, target_pos: Vector2) -> void:
+func initialize(level_ref: Node, lane_idx: int, start_pos: Vector2, target_pos: Vector2) -> void:
+	level = level_ref
+	lane_index = lane_idx
 	_start = start_pos
 	position = start_pos
 	_target = target_pos
-	_dir = direction.normalized()
+	_dir = (_target - _start).normalized()
 	_length = (_target - _start).length()
 	rotation = _dir.angle() + PI / 2.0
 	_apply_perspective_scale(0.0)
-	# Connect hitbox signal if Area2D exists
-	var hitbox = get_node_or_null("Area2D")
 
 
 func _process(delta: float) -> void:
@@ -47,6 +49,40 @@ func _process(delta: float) -> void:
 func _apply_perspective_scale(ease_t: float) -> void:
 	var s = lerp(near_scale, far_scale, ease_t)
 	scale = Vector2.ONE * s
+
+
+func retarget_after_shift() -> void:
+	if level == null:
+		return
+	var count = level.get_lane_count()
+	if count <= 0:
+		return
+	# Progress along old path
+	var traveled := _dir.dot(position - _start)
+	var t = 0.0 if _length <= 0.0 else clamp(traveled / _length, 0.0, 1.0)
+	# New lane geometry
+	var i_next: int = (lane_index + 1) % count
+	var inner_mid: Vector2 = level.inner_points[lane_index].lerp(level.inner_points[i_next], 0.5)
+	# Use inner midpoint as target for projectiles
+	var new_target := inner_mid
+	var lane_dir = (new_target - level.outer_points[lane_index].lerp(level.outer_points[i_next], 0.5))
+	if lane_dir.length() == 0.0:
+		queue_free()
+		return
+	lane_dir = lane_dir.normalized()
+	# Project original start onto new lane direction for a consistent path
+	var start_proj_len = lane_dir.dot(_start - inner_mid)
+	var start_on_lane = inner_mid + lane_dir * start_proj_len
+	_start = start_on_lane
+	_target = new_target
+	_length = (_target - _start).length()
+	if _length <= 0.0:
+		queue_free()
+		return
+	_dir = (_target - _start).normalized()
+	rotation = _dir.angle() + PI / 2.0
+	# Reposition preserving progress
+	position = _start.lerp(_target, t)
 
 
 func _on_collision_polygon_2d_tree_entered() -> void:

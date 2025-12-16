@@ -45,6 +45,27 @@ func initialize(level_ref: Node, lane_idx: int) -> void:
 	var s0 = lerp(far_scale, near_scale, ease_t0)
 	scale = Vector2.ONE * s0
 
+func retarget_after_shift() -> void:
+	# Re-align to updated lane geometry after perspective center shift
+	if level == null:
+		return
+	var count: int = level.get_lane_count()
+	if count <= 0:
+		return
+	# Compute current progress along old geometry
+	var traveled := _dir.dot(position - _inner)
+	var t = 0.0 if _length <= 0.0 else clamp(traveled / _length, 0.0, 1.0)
+	# Fetch new geometry for this lane
+	var i_next: int = (lane_index + 1) % count
+	var inner_mid: Vector2 = level.inner_points[lane_index].lerp(level.inner_points[i_next], 0.5)
+	var outer_mid: Vector2 = level.outer_points[lane_index].lerp(level.outer_points[i_next], 0.5)
+	_inner = inner_mid
+	_outer = outer_mid
+	_dir = (_outer - _inner).normalized()
+	_length = (_outer - _inner).length()
+	# Reposition along new geometry preserving t
+	position = _inner.lerp(_outer, t)
+
 func _process(delta: float) -> void:
 	if level == null:
 		return

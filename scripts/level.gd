@@ -1,10 +1,16 @@
 extends Node2D
 
-@export var shape_name: String = "octagon"
-@export var segments_per_edge: int = 2        # lanes per original edge
+@export var shape_name: String = "triangle"
+@export var segments_per_edge: int = 3        # lanes per original edge
 @export var inner_ratio: float = 0.05         # inner ring size (of min dimension)
 @export var outer_ratio: float = 0.40         # outer ring size (of min dimension)
 @export var inner_y_offset_ratio: float = 0.22  # fraction of outer ring radius to offset inner ring on Y
+@export var perspective_shift_ratio: float = 0.08  # fraction of player offset applied to center shift
+@export var inner_shift_ratio: float = 0.3  # how much of the shift affects outer ring vs inner (0..1)
+@export var outer_shift_ratio: float = 0.0  # how much of the shift affects outer ring vs inner (0..1)
+
+@onready var starfield := $Starfield as GPUParticles2D
+@onready var starfield_far := $StarfieldFar as GPUParticles2D
 
 var inner_points: Array[Vector2] = []
 var outer_points: Array[Vector2] = []
@@ -16,11 +22,15 @@ var lanes_container: Node2D
 var active_lane_fill: Polygon2D
 var lane_spokes: Array = []
 var active_spoke_index: int = -1
+var projectiles_container: Node2D
 var enemies_container: Node2D
 var enemy_timer: Timer
 var enemy_scene: PackedScene = preload("res://scenes/enemy.tscn")
 
 var screen_center := Vector2(0,0)
+var screen_center_base := Vector2(0,0)
+var screen_center_offset := Vector2(0,0)
+var last_outer_scale: float = 0.0
 var lane_line_scene: PackedScene = preload("res://scenes/lane_line.tscn")
 var rng := RandomNumberGenerator.new()
 
@@ -43,6 +53,10 @@ func _ensure_lines():
 		active_lane_fill = Polygon2D.new()
 		active_lane_fill.color = Color(GlobalData.c_highlight, 0.01)
 		add_child(active_lane_fill)
+	if projectiles_container == null:
+		projectiles_container = Node2D.new()
+		projectiles_container.name = "Projectiles"
+		add_child(projectiles_container)
 	# Ensure enemies container and timer
 	if enemies_container == null:
 		enemies_container = Node2D.new()
@@ -67,7 +81,13 @@ func get_lane_position(index: int, t: float) -> Vector2:
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	screen_center = get_viewport_rect().size * 0.5
+	screen_center_base = get_viewport_rect().size * 0.5
+	screen_center = screen_center_base + screen_center_offset
+	
+	starfield.position = screen_center
+	if starfield_far:
+		starfield_far.position.x = screen_center.x
+		starfield_far.position.y = screen_center.y + 140
 	rng.randomize()
 	_ensure_lines()
 	build_tube()
@@ -78,8 +98,16 @@ func _ready() -> void:
 		enemy_timer.start()
 
 func recalc_on_resize():
-		screen_center = get_viewport_rect().size * 0.5
-		build_tube()
+	screen_center_base = get_viewport_rect().size * 0.5
+	screen_center = screen_center_base + screen_center_offset
+	starfield.position = screen_center
+	if starfield_far:
+		starfield_far.position = screen_center
+		#var pm_far := starfield_far.process_material as ParticleProcessMaterial
+		#if pm_far:
+			## Adjust box extents to current viewport to cover sides/top/bottom
+			#pm_far.emission_box_extents = Vector3(get_viewport_rect().size.x * 0.5, get_viewport_rect().size.y * 0.5, 0)
+	build_tube()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
@@ -90,6 +118,7 @@ func build_tube():
 	var min_dim = min(viewport_size.x, viewport_size.y)
 	var inner_scale = min_dim * inner_ratio
 	var outer_scale = min_dim * outer_ratio
+	last_outer_scale = outer_scale
 
 	# Offset inner ring on Y by a fraction of the outer radius for perspective illusion
 	var inner_y_offset = outer_scale * inner_y_offset_ratio
@@ -100,9 +129,12 @@ func build_tube():
 	# 2) Scale and translate to center for both rings
 	inner_points.clear()
 	outer_points.clear()
+	var center_inner = screen_center_base + screen_center_offset * clamp(inner_shift_ratio, 0.0, 1.0)
+	# Outer shifts in the opposite direction (parallax) scaled by outer_shift_ratio
+	var center_outer = screen_center_base - screen_center_offset * clamp(outer_shift_ratio, 0.0, 1.0)
 	for p in base_points:
-			inner_points.append(screen_center + Vector2(0, inner_y_offset) + Vector2(p.x * inner_scale, p.y * inner_scale))
-			outer_points.append(screen_center + Vector2(p.x * outer_scale, p.y * outer_scale))
+			inner_points.append(center_inner + Vector2(0, inner_y_offset) + Vector2(p.x * inner_scale, p.y * inner_scale))
+			outer_points.append(center_outer + Vector2(p.x * outer_scale, p.y * outer_scale))
 
 	# 3) Draw rings
 	inner_line.clear_points()
@@ -180,6 +212,55 @@ func set_active_lane(index: int) -> void:
 		return
 	_update_active_lane_fill(index)
 	_update_active_spoke(index)
+
+func update_perspective_focus(focus: Vector2) -> void:
+	# Shift the effective center toward the focus point to enhance perspective
+	var viewport_size = get_viewport_rect().size
+	if viewport_size == Vector2.ZERO:
+		return
+	# Compute offset relative to base center, scaled by ratio
+	var raw_offset = (focus - screen_center_base) * perspective_shift_ratio
+	# Optionally clamp to avoid extreme distortion
+	var clamp_len = max(8.0, last_outer_scale * 0.25)
+	if raw_offset.length() > clamp_len:
+		raw_offset = raw_offset.normalized() * clamp_len
+	screen_center_offset = raw_offset
+	screen_center = screen_center_base + screen_center_offset
+	build_tube()
+	_update_starfield()
+	# Retarget existing enemies to the new geometry so they stay on-lane
+	if enemies_container:
+		for e in enemies_container.get_children():
+			if e.has_method("retarget_after_shift"):
+				e.retarget_after_shift()
+	# Retarget projectiles so they stay aligned after shift
+	if projectiles_container:
+		for p in projectiles_container.get_children():
+			if p.has_method("retarget_after_shift"):
+				p.retarget_after_shift()
+
+func _update_starfield() -> void:
+	if starfield == null:
+		return
+	# Position starfield at inner ring center (follow current center)
+	starfield.global_position = screen_center
+	var pm := starfield.process_material as ParticleProcessMaterial
+	if pm == null:
+		return
+	# Derive a speed scale from how far the center is shifted; larger offset -> faster stars
+	var s = clamp(screen_center_offset.length() / max(8.0, last_outer_scale * 0.25), 0.5, 3.0)
+	pm.initial_velocity_min = 800.0 * s
+	pm.initial_velocity_max = 1400.0 * s
+	starfield.amount = int(300 * s)
+	# Far layer fills the periphery with slower, denser stars
+	#if starfield_far:
+		#starfield_far.global_position = screen_center
+		#var pm_far := starfield_far.process_material as ParticleProcessMaterial
+		#if pm_far:
+			#var sf = clamp(s * 0.6, 0.4, 2.0)
+			#pm_far.initial_velocity_min = 200.0 * sf
+			#pm_far.initial_velocity_max = 420.0 * sf
+			#starfield_far.amount = int(700 * sf)
 
 func _update_active_lane_fill(index: int) -> void:
 	var count := inner_points.size()

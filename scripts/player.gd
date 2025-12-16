@@ -32,7 +32,7 @@ func _ready() -> void:
 
 	# Auto-fire timer (1s)
 	shoot_timer = Timer.new()
-	shoot_timer.wait_time = 0.3
+	shoot_timer.wait_time = 0.8
 	shoot_timer.one_shot = false
 	shoot_timer.autostart = true
 	add_child(shoot_timer)
@@ -58,6 +58,10 @@ func update_position() -> void:
 	# Outward is along the tube from inner to outer mids
 	var outward = (outer_mid - inner_mid).normalized()
 	position = base_pos + outward * OFFSET_DISTANCE
+
+	# Shift perspective center slightly toward the player to enhance depth
+	if level.has_method("update_perspective_focus"):
+		level.update_perspective_focus(position)
 
 func update_rotation() -> void:
 	# Align with inward (outer->inner) direction at mid-edge to point toward center
@@ -135,7 +139,10 @@ func _on_shoot_timer_timeout() -> void:
 	var proj = projectile_scene.instantiate()
 	if proj == null:
 		return
-	# Add to same parent as player or level for organization
-	level.add_child(proj)
+	# Add to projectiles container if available, otherwise to level
+	if level.has_node("Projectiles"):
+		level.get_node("Projectiles").add_child(proj)
+	else:
+		level.add_child(proj)
 	if proj.has_method("initialize"):
-		proj.initialize(position, inward, inner_mid)
+		proj.initialize(level, lane_index, position, inner_mid)
