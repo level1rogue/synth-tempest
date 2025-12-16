@@ -1,0 +1,78 @@
+[gd_scene load_steps=5 format=3 uid="uid://cmpq7vt5hkejh"]
+
+[ext_resource type="FontFile" uid="uid://bctuk6rg76r4g" path="res://fonts/Drexs-51Pp8.otf" id="1_font"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_title"]
+font = ExtResource("1_font")
+font_size = 120
+font_color = Color(0, 0.9, 1, 1)
+outline_size = 6
+outline_color = Color(0.4, 0, 0.8, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_tx5wa"]
+font = ExtResource("1_font")
+font_size = 48
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+bg_color = Color(0.05, 0.05, 0.2, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0.8, 1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0.9, 1, 0.6)
+shadow_size = 6
+
+[node name="StartScreen" type="CanvasLayer"]
+
+[node name="Overlay" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.02, 0.08, 0.8)
+
+[node name="Container" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Container"]
+custom_minimum_size = Vector2(600, 400)
+layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="Container/VBox"]
+layout_mode = 2
+text = "SYNTH TEMPEST"
+label_settings = SubResource("LabelSettings_title")
+
+[node name="Spacer" type="Control" parent="Container/VBox"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/VBox"]
+layout_mode = 2
+text = "Press A and D keys to move."
+label_settings = SubResource("LabelSettings_tx5wa")
+horizontal_alignment = 1
+
+[node name="Spacer2" type="Control" parent="Container/VBox"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="StartButton" type="Button" parent="Container/VBox"]
+custom_minimum_size = Vector2(300, 80)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.5, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 0.4, 1, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 48
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+text = "START"

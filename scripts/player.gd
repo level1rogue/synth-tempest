@@ -16,6 +16,7 @@ var original_polygon_points: PackedVector2Array = []
 var shoot_timer: Timer
 var projectile_scene: PackedScene = preload("res://scenes/projectile.tscn")
 var input_enabled := true
+var base_fire_rate := 0.8  # overwritten from Root at runtime
 
 func say_hi(name):
 	print("Hi, ", name)
@@ -25,23 +26,28 @@ func _ready() -> void:
 	polygon_2d = $Polygon2D
 	original_polygon_points = polygon_2d.polygon.duplicate()
 	# Wait for level to be initialized
-	if level.get_lane_count() == 0:
-		push_warning("Level not initialized yet, waiting...")
-		return
-	# Determine polygon winding once using outer ring
-	is_clockwise = _compute_clockwise(level.outer_points)
-	update_rotation()
-	update_position()
-	#update_polygon_perspective()
-	print(position)
+	if level:
+		if level.get_lane_count() == 0:
+			push_warning("Level not initialized yet, waiting...")
+			return
+		# Determine polygon winding once using outer ring
+		is_clockwise = _compute_clockwise(level.outer_points)
+		update_rotation()
+		update_position()
+		#update_polygon_perspective()
+		print(position)
 
-	# Auto-fire timer (1s)
-	shoot_timer = Timer.new()
-	shoot_timer.wait_time = 0.8
-	shoot_timer.one_shot = false
-	shoot_timer.autostart = true
-	add_child(shoot_timer)
-	shoot_timer.timeout.connect(_on_shoot_timer_timeout)
+		# Auto-fire timer
+		shoot_timer = Timer.new()
+		# Pull base fire rate from Root
+		var root = get_parent()
+		if root and root.has_method("get_base_fire_rate"):
+			base_fire_rate = root.get_base_fire_rate()
+		shoot_timer.wait_time = base_fire_rate
+		shoot_timer.one_shot = false
+		shoot_timer.autostart = true
+		add_child(shoot_timer)
+		shoot_timer.timeout.connect(_on_shoot_timer_timeout)
 
 func _compute_clockwise(points: Array) -> bool:
 	var area := 0.0
@@ -158,7 +164,12 @@ func _on_shoot_timer_timeout() -> void:
 	else:
 		level.add_child(proj)
 	if proj.has_method("initialize"):
-		proj.initialize(level, lane_index, position, inner_mid)
+		# Compute final damage from Root base and power multiplier
+		var root = get_parent()
+		var final_damage = 16.0
+		if root and root.has_method("get_base_damage") and root.has_method("get_shot_power_multiplier"):
+			final_damage = root.get_base_damage() * root.get_shot_power_multiplier()
+		proj.initialize(level, lane_index, position, inner_mid, final_damage)
 
 func set_enabled(enable: bool) -> void:
 	input_enabled = enable
@@ -170,3 +181,12 @@ func set_enabled(enable: bool) -> void:
 				shoot_timer.start()
 		else:
 			shoot_timer.stop()
+func update_fire_rate(speed_multiplier: float) -> void:
+	# Higher multiplier = faster fire = shorter interval
+	if shoot_timer:
+		var root = get_parent()
+		var base_rate = base_fire_rate
+		if root and root.has_method("get_base_fire_rate"):
+			base_rate = root.get_base_fire_rate()
+		shoot_timer.wait_time = base_rate / speed_multiplier
+		print("Fire rate updated! Interval: ", shoot_timer.wait_time)

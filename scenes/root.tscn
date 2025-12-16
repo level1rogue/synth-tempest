@@ -1,9 +1,7 @@
-[gd_scene load_steps=13 format=3 uid="uid://c6eee0usmte2o"]
+[gd_scene load_steps=11 format=3 uid="uid://c6eee0usmte2o"]
 
-[ext_resource type="PackedScene" uid="uid://bdc34kseudnu" path="res://scenes/level.tscn" id="1_j5px3"]
 [ext_resource type="Script" uid="uid://dg2ksyolimhl7" path="res://scripts/root.gd" id="1_lrqlo"]
 [ext_resource type="Shader" uid="uid://d2ahyk81s6fun" path="res://shaders/starfield.gdshader" id="2_jh1ax"]
-[ext_resource type="PackedScene" uid="uid://dossaoovpr3yp" path="res://scenes/player.tscn" id="3_sqa0i"]
 [ext_resource type="PackedScene" uid="uid://wtqr1c2at1v1" path="res://scenes/enemy.tscn" id="4_sqa0i"]
 [ext_resource type="Shader" uid="uid://bpd67tttdyqsp" path="res://shaders/vhs_effect.gdshader" id="6_kycxp"]
 [ext_resource type="AudioStream" uid="uid://bmorq1tny0gb" path="res://media/music/randomscripts.mp3" id="7_j287u"]
@@ -75,10 +73,6 @@ modulate = Color(0.015971804, 0.015971802, 0.015971802, 1)
 material = SubResource("ShaderMaterial_jh1ax")
 scale = Vector2(1158.5, 654.49994)
 mesh = SubResource("QuadMesh_vho56")
-
-[node name="Level" parent="." instance=ExtResource("1_j5px3")]
-
-[node name="Player" parent="." instance=ExtResource("3_sqa0i")]
 
 [node name="Enemy" parent="." instance=ExtResource("4_sqa0i")]
 position = Vector2(-582, -351)

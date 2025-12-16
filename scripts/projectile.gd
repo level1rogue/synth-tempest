@@ -1,22 +1,24 @@
 extends Node2D
 
+## Damage base comes from Root; projectile receives final damage at init
+
 @export var near_speed: float = 420.0   # speed near the player (at start)
 @export var far_speed: float = 140.0    # speed near the center (far away)
 @export var near_scale: float = 1.0     # scale at player
 @export var far_scale: float = 0.25     # scale at center
 @export var perspective_ease: float = 1.6
 @export var extra_travel_margin: float = 4.0
-@export var damage: float = 10.0
 
 var level: Node = null
 var lane_index: int = 0
+var damage: float = 0.0  # Overwritten in initialize()
 var _dir: Vector2 = Vector2.ZERO
 var _start: Vector2 = Vector2.ZERO
 var _target: Vector2 = Vector2.ZERO
 var _length: float = 0.0
 var _hit_enemies: Array = []  # Track enemies we've already hit to avoid double-hits
 
-func initialize(level_ref: Node, lane_idx: int, start_pos: Vector2, target_pos: Vector2) -> void:
+func initialize(level_ref: Node, lane_idx: int, start_pos: Vector2, target_pos: Vector2, final_damage: float) -> void:
 	level = level_ref
 	lane_index = lane_idx
 	_start = start_pos
@@ -26,6 +28,10 @@ func initialize(level_ref: Node, lane_idx: int, start_pos: Vector2, target_pos: 
 	_length = (_target - _start).length()
 	rotation = _dir.angle() + PI / 2.0
 	_apply_perspective_scale(0.0)
+	
+	# Apply final damage from caller (Root/Player)
+	damage = final_damage
+	print("Projectile: final_damage=", damage)
 
 
 func _process(delta: float) -> void:
@@ -111,11 +117,13 @@ func _check_collisions() -> void:
 func _on_area_entered(area: Area2D) -> void:
 	# Check if the area that entered is an enemy hitbox
 	var enemy = area
-	print("entered: ", enemy)
+	print("Projectile hit enemy, damage=", damage)
 	if enemy == null or _hit_enemies.has(enemy):
 		return
 	# If enemy has take_damage, hit it
 	if enemy.has_method("take_damage"):
 		_hit_enemies.append(enemy)
+		if "health" in enemy:
+			print("Applying damage:", damage, "to enemy with health:", enemy.health)
 		enemy.take_damage(damage)
 		queue_free()  # Projectile destroyed on hit
