@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="LevelConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+shape_name = "triangle"
+segments_per_edge = 3
+inner_ratio = 0.02
+outer_ratio = 0.5
+inner_y_offset_ratio = 0.22
+perspective_shift_ratio = 0.03
+outer_shift_ratio = 0.0
+enemy_spawn_interval = 2.5
+ring_color = Color(0.545098, 0.360784, 0.964706, 1)
+highlight_color = Color(0.654902, 0.545098, 0.980392, 1)
+ring_alpha = 0.2
+enemy_speed_multiplier = 1.0
+enemy_health_multiplier = 1.0
+projectile_damage_multiplier = 1.0

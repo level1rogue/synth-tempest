@@ -1,6 +1,8 @@
-[gd_scene load_steps=14 format=3 uid="uid://bdc34kseudnu"]
+[gd_scene load_steps=18 format=3 uid="uid://bdc34kseudnu"]
 
 [ext_resource type="Script" uid="uid://cgmry5peih38r" path="res://scripts/level.gd" id="1_2q6dc"]
+[ext_resource type="Resource" path="res://resources/level_1_triangle.tres" id="2_cfg"]
+[ext_resource type="FontFile" uid="uid://bctuk6rg76r4g" path="res://fonts/Drexs-51Pp8.otf" id="3_w8frs"]
 
 [sub_resource type="Gradient" id="Gradient_2q6dc"]
 offsets = PackedFloat32Array(0, 0.06178862, 1)
@@ -66,8 +68,19 @@ scale_over_velocity_max = 714.70996
 scale_over_velocity_curve = SubResource("CurveTexture_w8frs")
 color_ramp = SubResource("GradientTexture1D_w8frs")
 
+[sub_resource type="LabelSettings" id="LabelSettings_w8frs"]
+font = ExtResource("3_w8frs")
+font_size = 200
+font_color = Color(0.8980392, 0.11764706, 0.20392157, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_mx8sn"]
+font = ExtResource("3_w8frs")
+font_size = 200
+font_color = Color(1, 0.9647059, 0.6, 1)
+
 [node name="Level" type="Node2D"]
 script = ExtResource("1_2q6dc")
+level_config = ExtResource("2_cfg")
 
 [node name="Starfield" type="GPUParticles2D" parent="."]
 visible = false
@@ -92,3 +105,19 @@ randomness = 0.6
 trail_enabled = true
 trail_lifetime = 9.46
 process_material = SubResource("ParticleProcessMaterial_far")
+
+[node name="HealthLabel" type="Label" parent="."]
+offset_left = 36.0
+offset_top = 33.0
+offset_right = 420.0
+offset_bottom = 233.0
+text = "099"
+label_settings = SubResource("LabelSettings_w8frs")
+
+[node name="PointsLabel" type="Label" parent="."]
+offset_left = 559.0
+offset_top = 33.0
+offset_right = 1022.0
+offset_bottom = 233.0
+text = "00000"
+label_settings = SubResource("LabelSettings_mx8sn")

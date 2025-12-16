@@ -1,16 +1,15 @@
 extends Node2D
 
-@export var shape_name: String = "triangle"
-@export var segments_per_edge: int = 3        # lanes per original edge
-@export var inner_ratio: float = 0.05         # inner ring size (of min dimension)
-@export var outer_ratio: float = 0.40         # outer ring size (of min dimension)
-@export var inner_y_offset_ratio: float = 0.22  # fraction of outer ring radius to offset inner ring on Y
-@export var perspective_shift_ratio: float = 0.08  # fraction of player offset applied to center shift
-@export var inner_shift_ratio: float = 0.3  # how much of the shift affects outer ring vs inner (0..1)
-@export var outer_shift_ratio: float = 0.0  # how much of the shift affects outer ring vs inner (0..1)
+@export var level_config: LevelConfig
+const DEFAULT_CONFIG := preload("res://resources/level_1_triangle.tres")
 
 @onready var starfield := $Starfield as GPUParticles2D
 @onready var starfield_far := $StarfieldFar as GPUParticles2D
+@onready var points_label := $PointsLabel as Label
+@onready var health_label := $HealthLabel as Label
+
+var player_points := 0
+var player_health := 100
 
 var inner_points: Array[Vector2] = []
 var outer_points: Array[Vector2] = []
@@ -38,20 +37,22 @@ func _ensure_lines():
 	if inner_line == null:
 		inner_line = Line2D.new()
 		inner_line.width = 1.0
-		inner_line.default_color = GlobalData.c_purple  # inner ring color
-		inner_line.default_color.a = 0.2
+		var ring_col = level_config.ring_color if level_config else GlobalData.c_purple
+		inner_line.default_color = ring_col
+		inner_line.default_color.a = level_config.ring_alpha if level_config else 0.2
 		add_child(inner_line)
 	if outer_line == null:
 		outer_line = Line2D.new()
 		outer_line.width = 3.0
-		outer_line.default_color = GlobalData.c_purple # outer ring color
+		outer_line.default_color = level_config.ring_color if level_config else GlobalData.c_purple
 		add_child(outer_line)
 	if lanes_container == null:
 		lanes_container = Node2D.new()
 		add_child(lanes_container)
 	if active_lane_fill == null:
 		active_lane_fill = Polygon2D.new()
-		active_lane_fill.color = Color(GlobalData.c_highlight, 0.01)
+		var hl_col = level_config.highlight_color if level_config else GlobalData.c_highlight
+		active_lane_fill.color = Color(hl_col, 0.01)
 		add_child(active_lane_fill)
 	if projectiles_container == null:
 		projectiles_container = Node2D.new()
@@ -64,7 +65,7 @@ func _ensure_lines():
 		add_child(enemies_container)
 	if enemy_timer == null:
 		enemy_timer = Timer.new()
-		enemy_timer.wait_time = 2.0
+		enemy_timer.wait_time = level_config.enemy_spawn_interval if level_config else 2.0
 		enemy_timer.one_shot = false
 		enemy_timer.autostart = true
 		add_child(enemy_timer)
@@ -81,6 +82,13 @@ func get_lane_position(index: int, t: float) -> Vector2:
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	if level_config == null:
+		# Fallback so the level always renders if not set in the scene
+		if ResourceLoader.exists("res://resources/level_1_triangle.tres"):
+			level_config = DEFAULT_CONFIG
+		else:
+			# Last resort: create an empty config with sane defaults
+			level_config = LevelConfig.new()
 	screen_center_base = get_viewport_rect().size * 0.5
 	screen_center = screen_center_base + screen_center_offset
 	
@@ -96,6 +104,9 @@ func _ready() -> void:
 	# Start enemy spawning after initial tube build
 	if enemy_timer:
 		enemy_timer.start()
+		
+	points_label.text = str(player_points).pad_zeros(5)
+	health_label.text = str(player_health).pad_zeros(3)
 
 func recalc_on_resize():
 	screen_center_base = get_viewport_rect().size * 0.5
@@ -114,24 +125,27 @@ func _process(delta: float) -> void:
 	pass
 
 func build_tube():
+	if not level_config:
+		push_error("LevelConfig not assigned!")
+		return
 	var viewport_size = get_viewport_rect().size
 	var min_dim = min(viewport_size.x, viewport_size.y)
-	var inner_scale = min_dim * inner_ratio
-	var outer_scale = min_dim * outer_ratio
+	var inner_scale = min_dim * level_config.inner_ratio
+	var outer_scale = min_dim * level_config.outer_ratio
 	last_outer_scale = outer_scale
 
 	# Offset inner ring on Y by a fraction of the outer radius for perspective illusion
-	var inner_y_offset = outer_scale * inner_y_offset_ratio
+	var inner_y_offset = outer_scale * level_config.inner_y_offset_ratio
 
 	# 1) Get normalized, subdivided points for the chosen shape
-	var base_points = load("res://scripts/shapes_config.gd").calc_shape_segments(shape_name, segments_per_edge)
+	var base_points = load("res://scripts/shapes_config.gd").calc_shape_segments(level_config.shape_name, level_config.segments_per_edge)
 
 	# 2) Scale and translate to center for both rings
 	inner_points.clear()
 	outer_points.clear()
-	var center_inner = screen_center_base + screen_center_offset * clamp(inner_shift_ratio, 0.0, 1.0)
+	var center_inner = screen_center_base + screen_center_offset
 	# Outer shifts in the opposite direction (parallax) scaled by outer_shift_ratio
-	var center_outer = screen_center_base - screen_center_offset * clamp(outer_shift_ratio, 0.0, 1.0)
+	var center_outer = screen_center_base - screen_center_offset * clamp(level_config.outer_shift_ratio, 0.0, 1.0)
 	for p in base_points:
 			inner_points.append(center_inner + Vector2(0, inner_y_offset) + Vector2(p.x * inner_scale, p.y * inner_scale))
 			outer_points.append(center_outer + Vector2(p.x * outer_scale, p.y * outer_scale))
@@ -161,8 +175,9 @@ func build_tube():
 				continue
 			# Assign a unique Gradient resource per spoke and enable it
 			var grad := Gradient.new()
-			grad.add_point(0.0, Color(GlobalData.c_purple, 0.2))
-			grad.add_point(1.0, GlobalData.c_purple)
+			var ring_col = level_config.ring_color if level_config else GlobalData.c_purple
+			grad.add_point(0.0, Color(ring_col, level_config.ring_alpha if level_config else 0.2))
+			grad.add_point(1.0, ring_col)
 			spoke.gradient = grad
 			#spoke.use_gradient = true
 			spoke.clear_points()
@@ -176,8 +191,9 @@ func build_tube():
 		# Set default inactive modulate for all spokes
 		for s in lane_spokes:
 			var grad_default := Gradient.new()
-			grad_default.add_point(0.0, Color(GlobalData.c_purple, 0.2))
-			grad_default.add_point(1.0, GlobalData.c_purple)
+			var ring_col = level_config.ring_color if level_config else GlobalData.c_purple
+			grad_default.add_point(0.0, Color(ring_col, level_config.ring_alpha if level_config else 0.2))
+			grad_default.add_point(1.0, ring_col)
 			s.gradient = grad_default
 			#s.use_gradient = true
 
@@ -219,7 +235,8 @@ func update_perspective_focus(focus: Vector2) -> void:
 	if viewport_size == Vector2.ZERO:
 		return
 	# Compute offset relative to base center, scaled by ratio
-	var raw_offset = (focus - screen_center_base) * perspective_shift_ratio
+	var shift_ratio = level_config.perspective_shift_ratio if level_config else 0.08
+	var raw_offset = (focus - screen_center_base) * shift_ratio
 	# Optionally clamp to avoid extreme distortion
 	var clamp_len = max(8.0, last_outer_scale * 0.25)
 	if raw_offset.length() > clamp_len:
@@ -285,14 +302,16 @@ func _update_active_spoke(index: int) -> void:
 		var s: Line2D = lane_spokes[k]
 		if k == i or k == j:
 			var grad_active := Gradient.new()
-			grad_active.add_point(0.0, Color(GlobalData.c_highlight, 0.2))
-			grad_active.add_point(1.0, GlobalData.c_highlight)
+			var hl_col = level_config.highlight_color if level_config else GlobalData.c_highlight
+			grad_active.add_point(0.0, Color(hl_col, level_config.ring_alpha if level_config else 0.2))
+			grad_active.add_point(1.0, hl_col)
 			s.gradient = grad_active
 			#s.use_gradient = true
 		else:
 			var grad_inactive := Gradient.new()
-			grad_inactive.add_point(0.0, Color(GlobalData.c_purple, 0.2))
-			grad_inactive.add_point(1.0, GlobalData.c_purple)
+			var ring_col = level_config.ring_color if level_config else GlobalData.c_purple
+			grad_inactive.add_point(0.0, Color(ring_col, level_config.ring_alpha if level_config else 0.2))
+			grad_inactive.add_point(1.0, ring_col)
 			s.gradient = grad_inactive
 			#s.use_gradient = true
 
@@ -312,3 +331,11 @@ func _on_enemy_timer_timeout() -> void:
 	# Initialize enemy to move along chosen lane towards outer ring
 	if enemy.has_method("initialize"):
 		enemy.initialize(self, lane_index)
+
+func add_to_points(amount: int):
+	player_points += amount
+	points_label.text = str(player_points).pad_zeros(5)
+
+func player_take_damage(amount: int):
+	player_health -= amount
+	health_label.text = str(player_health).pad_zeros(3)

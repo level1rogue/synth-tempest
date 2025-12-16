@@ -82,10 +82,12 @@ func _process(delta: float) -> void:
 	# Despawn after we pass beyond the outer ring
 	traveled = _dir.dot(position - _inner)
 	if traveled >= _length + 4.0:
+		level.player_take_damage(10)
 		queue_free()
 
 
 func take_damage(damage: float) -> void:
 	health -= damage
 	if health <= 0.0:
+		level.add_to_points(10)
 		queue_free()

@@ -23,6 +23,10 @@ func _ready() -> void:
 	level = $"../Level"
 	polygon_2d = $Polygon2D
 	original_polygon_points = polygon_2d.polygon.duplicate()
+	# Wait for level to be initialized
+	if level.get_lane_count() == 0:
+		push_warning("Level not initialized yet, waiting...")
+		return
 	# Determine polygon winding once using outer ring
 	is_clockwise = _compute_clockwise(level.outer_points)
 	update_rotation()
@@ -50,6 +54,8 @@ func _compute_clockwise(points: Array) -> bool:
 func update_position() -> void:
 	# Use midpoint between consecutive points on each ring, then move along tube depth
 	var count = level.get_lane_count()
+	if count == 0:
+		return
 	var i_next = (lane_index + 1) % count
 	var inner_mid = level.inner_points[lane_index].lerp(level.inner_points[i_next], 0.5)
 	var outer_mid = level.outer_points[lane_index].lerp(level.outer_points[i_next], 0.5)
@@ -66,6 +72,8 @@ func update_position() -> void:
 func update_rotation() -> void:
 	# Align with inward (outer->inner) direction at mid-edge to point toward center
 	var count = level.get_lane_count()
+	if count == 0:
+		return
 	var i_next = (lane_index + 1) % count
 	var inner_mid = level.inner_points[lane_index].lerp(level.inner_points[i_next], 0.5)
 	var outer_mid = level.outer_points[lane_index].lerp(level.outer_points[i_next], 0.5)
@@ -79,6 +87,8 @@ func update_polygon_perspective() -> void:
 	
 	# Get the direction of the polygon edge the ship is on
 	var count = level.get_lane_count()
+	if count == 0:
+		return
 	var i_next = (lane_index + 1) % count
 	var inner_mid = level.inner_points[lane_index].lerp(level.inner_points[i_next], 0.5)
 	var outer_mid = level.outer_points[lane_index].lerp(level.outer_points[i_next], 0.5)
