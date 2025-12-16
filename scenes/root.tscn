@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://c6eee0usmte2o"]
+[gd_scene load_steps=13 format=3 uid="uid://c6eee0usmte2o"]
 
 [ext_resource type="PackedScene" uid="uid://bdc34kseudnu" path="res://scenes/level.tscn" id="1_j5px3"]
 [ext_resource type="Script" uid="uid://dg2ksyolimhl7" path="res://scripts/root.gd" id="1_lrqlo"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://dossaoovpr3yp" path="res://scenes/player.tscn" id="3_sqa0i"]
 [ext_resource type="PackedScene" uid="uid://wtqr1c2at1v1" path="res://scenes/enemy.tscn" id="4_sqa0i"]
 [ext_resource type="Shader" uid="uid://bpd67tttdyqsp" path="res://shaders/vhs_effect.gdshader" id="6_kycxp"]
+[ext_resource type="AudioStream" uid="uid://bmorq1tny0gb" path="res://media/music/randomscripts.mp3" id="7_j287u"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_vho56"]
 
@@ -92,3 +93,7 @@ material = SubResource("ShaderMaterial_kycxp")
 position = Vector2(1081, 656)
 scale = Vector2(884, 570.00006)
 mesh = SubResource("QuadMesh_jh1ax")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("7_j287u")
+autoplay = true
