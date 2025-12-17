@@ -25,6 +25,7 @@ shader_parameter/pixelate_count = 1000.0
 
 [sub_resource type="Environment" id="Environment_sqa0i"]
 background_mode = 3
+glow_enabled = true
 glow_intensity = 1.36
 glow_strength = 0.98
 glow_bloom = 0.32
