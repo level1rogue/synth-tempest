@@ -37,6 +37,17 @@ func _ready() -> void:
 	$ShaderBackground.scale = get_viewport_rect().size
 	$ShaderGrader.position = get_viewport_rect().size /2
 	$ShaderGrader.scale = get_viewport_rect().size
+	
+	# Fix ShaderGrader modulate so it doesn't render black
+	$ShaderGrader.modulate = Color(1, 1, 1, 1)
+	$ShaderGrader.self_modulate = Color(1, 1, 1, 1)
+	
+	# Add BackBufferCopy before ShaderGrader so it captures rendered content
+	var backbuffer = BackBufferCopy.new()
+	backbuffer.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+	add_child(backbuffer)
+	# Move it just before ShaderGrader
+	move_child(backbuffer, $ShaderGrader.get_index())
 
 	# Show start screen only; level/player not loaded yet
 	_show_start_screen()
@@ -62,6 +73,14 @@ func _on_start_game(start_screen: Node) -> void:
 	# Instantiate Player
 	_player = _player_scene.instantiate()
 	add_child(_player)
+	
+	# Move BackBufferCopy and ShaderGrader to render after all game content
+	# This ensures the shader processes everything including dynamically added nodes
+	for child in get_children():
+		if child is BackBufferCopy:
+			move_child(child, -1)
+	if has_node("ShaderGrader"):
+		move_child($ShaderGrader, -1)
 
 	# Get label refs from the newly instantiated level
 	_points_label = _level.get_node("PointsLabel") as Label
